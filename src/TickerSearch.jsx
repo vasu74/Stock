@@ -75,10 +75,11 @@ const TickerSearch = ({ setSelectedTicker }) => {
   }, []);
 
   return (
-    <div className="relative mb-8" ref={inputRef}>
+    <div className="relative mb-8">
       <input
         type="text"
         value={searchTerm}
+        ref={inputRef}
         onChange={(e) => {
           setSearchTerm(e.target.value);
           setShowResults(true);

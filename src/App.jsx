@@ -1,59 +1,44 @@
-import React, { useEffect, useState } from "react";
-import TickerSearch from "./TickerSearch";
-import StockDetails from "./StockDetails";
-import "./App.css";
+// App.js or ParentComponent.js
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import AreaChartComponent from "./AreaChartComponent";
 
 const App = () => {
-  const [selectedTicker, setSelectedTicker] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [closingPrices, setClosingPrices] = useState([]);
+  const [labels, setLabels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Update history when a new ticker is selected
   useEffect(() => {
-    if (selectedTicker) {
-      setHistory((prevHistory) => {
-        const InHistory = prevHistory.includes(selectedTicker.name);
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(
+          "https://api.polygon.io/v2/aggs/ticker/AAPL/range/1/week/2023-01-09/2023-07-26?adjusted=true&sort=asc&apiKey=kdVTzCDKNm9zggju9MXBSgp0VSkfjKSi"
+        );
+        const results = response.data.results;
+        const prices = results.map((result) => result.c);
+        setClosingPrices(prices);
 
-        if (!InHistory) {
-          const updateHistory = [selectedTicker.name, ...prevHistory];
+        // Generate dynamic labels
+        const weeks = results.map((_, index) => `Week ${index + 1}`);
+        setLabels(weeks);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-          if (updateHistory.length > 5) {
-            updateHistory.pop();
-          }
+    fetchData();
+  }, []);
 
-          return updateHistory;
-        }
-
-        return prevHistory;
-      });
-    }
-  }, [selectedTicker]);
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="bg-[#0F172A] w-[100vw] h-full items-center justify-center flex">
-      <div className="App h-[100vh] max-w-[1366px] mx-auto p-20 rounded-md text-white">
-        <header className="App-header mb-8 flex flex-col items-center justify-center text-center">
-          <h1 className="md:text-5xl text-4xl leading-normal font-medium">
-            USA Stock Price Tracker
-          </h1>
-          <p className="mt-2">(Live Price Facility is paid by the API)</p>
-        </header>
-
-        <div className="mt-4 mb-4">
-          {history.length > 0 ? (
-            <ul className="flex gap-2 flex-wrap">
-              {history.map((one, index) => (
-                <li className="bg-[#449AFF] p-2 rounded-md" key={index}>
-                  {one}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-center">For History Start Searching ... </p>
-          )}
-        </div>
-        <TickerSearch setSelectedTicker={setSelectedTicker} />
-        {selectedTicker && <StockDetails ticker={selectedTicker} />}
-      </div>
+    <div>
+      <h1>Stock Closing Prices</h1>
+      <AreaChartComponent data={closingPrices} labels={labels} />
     </div>
   );
 };
